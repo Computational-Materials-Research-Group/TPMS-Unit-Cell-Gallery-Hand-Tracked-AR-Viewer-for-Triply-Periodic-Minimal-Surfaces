@@ -10,16 +10,18 @@
 </p>
 
 <p align="center">
-  A single self-contained HTML file that renders the seven canonical <b>triply periodic minimal
-  surface (TPMS)</b> unit cells — Primitive, Neovius, Diamond, FRD, IWP, Fischer&ndash;Koch, and
-  Gyroid — as live <b>marching-cubes isosurfaces</b> from their implicit trigonometric equations.
-  On desktop it's an orbiting gallery you tap and drag; on a <b>Meta Quest</b> it becomes a row of
-  small lattices floating in your real room, which you select and resize with nothing but a
-  pinch. Each surface is colored by a diverging colormap and narrated aloud with a short,
-  research-grounded note on what it's actually used for.
+  Put on a <b>Meta Quest</b> and the seven canonical <b>triply periodic minimal surface (TPMS)</b>
+  unit cells, Primitive, Neovius, Diamond, FRD, IWP, Fischer&ndash;Koch, and Gyroid, appear as a
+  row of small lattices floating in your real room. Pinch one with your bare hand to select and
+  resize it, walk around the row to see it from any angle, and listen as each lattice is narrated
+  aloud with a short, research-grounded note on what it's actually used for. The same file also
+  works as an orbiting desktop gallery you tap and drag. In either mode every surface is a live
+  <b>marching-cubes isosurface</b> built in the browser from its implicit trigonometric equation
+  and shaded with a diverging colormap, all from a single self-contained HTML file with nothing
+  else to install.
 </p>
 
-<img width="1665" height="867" alt="tpms ar" src="https://github.com/user-attachments/assets/72b46ada-dfcd-4ca7-87d1-a25dfc8d4c4a" />
+<img width="1665" height="867" alt="tpms ar" src="https://github.com/user-attachments/assets/80215338-78e9-4c72-aeaf-0d33bfd9e49f" />
 
 ---
 
