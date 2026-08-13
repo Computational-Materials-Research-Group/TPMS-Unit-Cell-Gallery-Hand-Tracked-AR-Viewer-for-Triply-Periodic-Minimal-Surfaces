@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>TPMS Unit Cell Gallery</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root{
+  --bg: #0a0d13;
+  --bg-2: #10141c;
+  --line: #1e2733;
+  --ink: #e9e6dd;
+  --ink-dim: #8891a0;
+  --amber: #c98b4a;
+  --amber-dim: #7a5836;
+  --cool: #3a5cc0;
+  --warm: #b4263a;
+}
+*{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ height:100%; overflow:hidden; }
+body{
+  background: radial-gradient(120% 90% at 50% 8%, var(--bg-2) 0%, var(--bg) 62%);
+  color: var(--ink);
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  display:flex; flex-direction:column;
+}
+
+/* ---------- header ---------- */
+#header{
+  display:flex; align-items:baseline; justify-content:space-between;
+  padding: 16px 22px 8px;
+  z-index: 5;
+}
+#eyebrow{
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-dim);
+}
+#eyebrow b{ color: var(--amber); font-weight:500; }
+#instruction{
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--ink-dim); letter-spacing: 0.03em;
+}
+
+/* ---------- viewport ---------- */
+#stage{
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+  background:
+    linear-gradient(var(--line) 1px, transparent 1px) 0 0/100% 44px,
+    linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0/44px 100%,
+    var(--bg-2);
+  background-blend-mode: overlay, overlay, normal;
+}
+.corner{
+  position:absolute; width:18px; height:18px; z-index:4; pointer-events:none;
+  border-color: var(--amber-dim);
+}
+.corner.tl{ top:8px; left:8px; border-top:1.5px solid; border-left:1.5px solid; }
+.corner.tr{ top:8px; right:8px; border-top:1.5px solid; border-right:1.5px solid; }
+.corner.bl{ bottom:8px; left:8px; border-bottom:1.5px solid; border-left:1.5px solid; }
+.corner.br{ bottom:8px; right:8px; border-bottom:1.5px solid; border-right:1.5px solid; }
+
+#canvasHolder{ position:absolute; inset:0; }
+#canvasHolder canvas{ display:block; touch-action: none; }
+
+#loadingTag{
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:0.1em;
+  color: var(--ink-dim); text-transform:uppercase; z-index:6;
+}
+
+/* labels projected under each lattice */
+#labelsLayer{ position:absolute; inset:0; z-index:6; pointer-events:none; }
+.latticeLabel{
+  position:absolute; transform: translate(-50%, 0);
+  font-family:'IBM Plex Mono', monospace; font-size: 10px; letter-spacing:0.05em;
+  color: var(--ink-dim); background: rgba(10,13,19,0.55);
+  padding: 4px 7px; border-radius: 3px; border: 1px solid transparent;
+  pointer-events: auto; cursor: pointer; white-space: nowrap;
+  transition: color .15s, border-color .15s;
+}
+.latticeLabel:hover{ color: var(--ink); }
+.latticeLabel.active{ color: var(--amber); border-color: var(--amber-dim); }
+
+/* legend */
+#legend{
+  position:absolute; bottom:10px; right:10px; z-index:6;
+  font-family:'IBM Plex Mono', monospace; font-size:9px; color: var(--ink-dim);
+  display:flex; align-items:center; gap:6px;
+  letter-spacing:0.08em; text-transform:uppercase;
+}
+#legendBar{
+  width:64px; height:6px; border-radius:3px;
+  background: linear-gradient(90deg, var(--cool), #dcdcdc, var(--warm));
+  border: 1px solid rgba(255,255,255,0.08);
+}
+#resetBtn, #audioBtn{
+  font-family:'IBM Plex Mono', monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase;
+  color: var(--ink-dim); background: rgba(10,13,19,0.55); border:1px solid var(--line);
+  padding:6px 10px; border-radius:3px; cursor:pointer;
+}
+#resetBtn:hover, #audioBtn:hover{ color: var(--ink); border-color: var(--amber-dim); }
+#topRightControls{
+  position:absolute; top:10px; right:10px; z-index:6;
+  display:flex; gap:8px;
+}
+
+/* ---------- detail panel ---------- */
+#panel{
+  flex: 0 0 auto;
+  padding: 14px 22px 20px;
+  z-index: 5;
+}
+#specIndex{
+  font-family:'IBM Plex Mono', monospace; font-size:11px; color: var(--amber);
+  letter-spacing:0.12em; margin-bottom:4px;
+}
+#name{
+  font-size: clamp(24px, 5.5vw, 34px);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+}
+#altName{
+  font-family:'IBM Plex Mono', monospace; font-size: 11px; color: var(--ink-dim);
+  margin-top: 3px; margin-bottom: 10px;
+}
+#appLabel{
+  font-family:'IBM Plex Mono', monospace; font-size: 10px; letter-spacing:0.12em;
+  color: var(--ink-dim); text-transform:uppercase; margin-bottom: 4px;
+}
+#appText{
+  font-size: 14px; line-height: 1.5; color: var(--ink);
+  max-width: 720px;
+}
+
+@media (max-width: 560px){
+  #instruction{ display:none; }
+  .latticeLabel{ font-size: 9px; padding: 3px 5px; }
+}
+
+/* ---------- AR mode ---------- */
+#ARButton{
+  bottom: 20px !important;
+  background: rgba(10,13,19,0.75) !important;
+  border: 1px solid var(--amber-dim) !important;
+  font-family: 'IBM Plex Mono', monospace !important;
+  letter-spacing: 0.08em !important;
+}
+#arNotice{
+  position:absolute; bottom:56px; left:50%; transform:translateX(-50%);
+  font-family:'IBM Plex Mono', monospace; font-size:10px; color: var(--ink-dim);
+  letter-spacing:0.04em; text-align:center; z-index:6; opacity:0.8;
+  pointer-events:none; white-space:nowrap;
+}
+body.ar-mode{ background: transparent !important; }
+body.ar-mode #stage{ background: transparent !important; border-color: transparent !important; }
+body.ar-mode #labelsLayer{ display:none; } /* AR uses in-scene 3D labels instead */
+body.ar-mode #panel{ opacity: 0.0; } /* AR uses in-scene 3D detail text; DOM panel is unreliable in headsets */
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div id="eyebrow">TPMS <b>Unit Cell</b> Gallery</div>
+  <div id="instruction">Tap a lattice to see its application &middot; drag it away from itself to resize it</div>
+</div>
+
+<div id="stage">
+  <div class="corner tl"></div><div class="corner tr"></div>
+  <div class="corner bl"></div><div class="corner br"></div>
+  <div id="canvasHolder"></div>
+  <div id="labelsLayer"></div>
+  <div id="loadingTag">rendering surfaces&hellip;</div>
+  <div id="legend"><span>cool</span><div id="legendBar"></div><span>warm</span></div>
+  <div id="topRightControls">
+    <div id="audioBtn">&#128266; Audio on</div>
+    <div id="resetBtn">&#8635; Reset sizes</div>
+  </div>
+</div>
+<div id="arNotice">On Quest: enable Hand Tracking in Settings &gt; Movement Tracking. Pinch a lattice with one hand to carry it &mdash; move your hand to reposition it, twist your wrist to rotate it. Pinch it with both hands to resize it.</div>
+
+<div id="panel">
+  <div id="specIndex">SPECIMEN 01 / 07</div>
+  <div id="name">Primitive</div>
+  <div id="altName">Schwarz P surface</div>
+  <div id="appLabel">Applications</div>
+  <div id="appText">&nbsp;</div>
+</div>
+
+<script type="importmap">
+{"imports": {
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+}}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { MarchingCubes } from 'three/addons/objects/MarchingCubes.js';
+import { ARButton } from 'three/addons/webxr/ARButton.js';
+
+/* ----------------------------------------------------------------
+   TPMS implicit surface definitions. Application text is grounded
+   in published TPMS lattice research (heat-exchanger, tissue-
+   scaffold, and energy-absorption studies), paraphrased.
+------------------------------------------------------------------- */
+const STRUCTURES = [
+  {
+    name: 'Primitive', alt: 'Schwarz P surface', speak: 'Primitive',
+    application: 'Gives the highest thermal conductivity and lowest pressure drop of the common TPMS types, which is why it shows up in heat sinks and heat exchangers, including aerospace precooling systems.',
+    f: (cx,sx,c2x,s2x, cy,sy,c2y,s2y, cz,sz,c2z,s2z) => cx + cy + cz
+  },
+  {
+    name: 'Neovius', alt: 'Neovius surface', speak: 'Neovius',
+    application: 'Repeatedly measures the highest compressive strength and energy absorption among common TPMS types, making it a strong fit for lightweight, impact-absorbing structural parts.',
+    f: (cx,sx,c2x,s2x, cy,sy,c2y,s2y, cz,sz,c2z,s2z) => 3*(cx+cy+cz) + 4*cx*cy*cz
+  },
+  {
+    name: 'Diamond', alt: 'Schwarz D surface', speak: 'Diamond',
+    application: 'Has the highest surface area of the common TPMS types, giving it strong thermal-hydraulic performance in heat exchangers, and it is one of the most-used geometries for bone and bio-implant scaffolds.',
+    f: (cx,sx,c2x,s2x, cy,sy,c2y,s2y, cz,sz,c2z,s2z) =>
+        sx*sy*sz + sx*cy*cz + cx*sy*cz + cx*cy*sz
+  },
+  {
+    name: 'FRD', alt: 'F-RD surface', speak: 'F R D',
+    application: 'Has the highest load-bearing elasticity of the common TPMS types at a given density, so it is studied for crash-protection and energy-absorbing lattices, alongside some high-performance heat exchanger work.',
+    f: (cx,sx,c2x,s2x, cy,sy,c2y,s2y, cz,sz,c2z,s2z) =>
+        4*cx*cy*cz - (c2x*c2y + c2y*c2z + c2z*c2x)
+  },
+  {
+    name: 'IWP', alt: 'I-WP surface', speak: 'I W P',
+    application: 'Achieved the best heat-transfer performance per unit of flow resistance in comparative studies, and because it forms two separate interpenetrating channels, it can carry two fluids through one block without mixing them.',
+    f: (cx,sx,c2x,s2x, cy,sy,c2y,s2y, cz,sz,c2z,s2z) =>
+        2*(cx*cy + cy*cz + cz*cx) - (c2x + c2y + c2z)
+  },
+  {
+    name: 'Fischer\u2013Koch', alt: 'Fischer\u2013Koch S surface', speak: 'Fischer Koch',
+    application: 'Ceramic and metal scaffold studies found it about 32% stronger and absorbing 49% more energy than Gyroid at the same porosity, making it a candidate for load-bearing bone scaffolds.',
+    f: (cx,sx,c2x,s2x, cy,sy,c2y,s2y, cz,sz,c2z,s2z) =>
+        c2x*sy*cz + cx*c2y*sz + sx*cy*c2z
+  },
+  {
+    name: 'Gyroid', alt: 'Schoen G surface', speak: 'Gyroid',
+    application: 'The most common TPMS in additive manufacturing: no straight channels to trap powder, so it self-supports and self-drains during printing, and it is widely used for aerospace brackets, heat exchangers, and bone implants.',
+    f: (cx,sx,c2x,s2x, cy,sy,c2y,s2y, cz,sz,c2z,s2z) =>
+        sx*cy + sy*cz + sz*cx
+  }
+];
+
+/* ---------------- coolwarm colormap (Moreland-style diverging) ---------------- */
+const COOLWARM = [
+  [0.230,0.299,0.754],
+  [0.552,0.690,0.996],
+  [0.865,0.865,0.865],
+  [0.955,0.638,0.518],
+  [0.706,0.016,0.150]
+];
+function coolwarm(t){
+  t = Math.min(1, Math.max(0, t));
+  const n = COOLWARM.length - 1;
+  const scaled = t * n;
+  const i = Math.min(Math.floor(scaled), n - 1);
+  const f = scaled - i;
+  const a = COOLWARM[i], b = COOLWARM[i+1];
+  return [ a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f, a[2]+(b[2]-a[2])*f ];
+}
+
+/* ---------------- three.js setup ---------------- */
+const holder = document.getElementById('canvasHolder');
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.05, 100);
+camera.position.set(0, 0.3, 6); // safe default; fitDesktopCamera() refines this once layout is known
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setClearColor(0x000000, 0);
+renderer.xr.enabled = true;
+renderer.xr.setReferenceSpaceType('local-floor');
+holder.appendChild(renderer.domElement);
+
+document.body.appendChild(ARButton.createButton(renderer, {
+  optionalFeatures: ['hand-tracking', 'local-floor', 'dom-overlay'],
+  domOverlay: { root: document.body }
+}));
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.35;
+controls.minDistance = 1.5;
+controls.maxDistance = 20;
+controls.enablePan = false;
+controls.target.set(0,0,0);
+
+scene.add(new THREE.HemisphereLight(0x9fb4ff, 0x3a2a1a, 0.9));
+const key1 = new THREE.DirectionalLight(0xffffff, 1.1);
+key1.position.set(2.5, 3, 2);
+scene.add(key1);
+const key2 = new THREE.DirectionalLight(0x9fc4ff, 0.5);
+key2.position.set(-3, -1.5, -2);
+scene.add(key2);
+
+const rowGroup = new THREE.Group();
+scene.add(rowGroup);
+
+/* ---------------- text sprites (used for AR labels/detail, no dom-overlay dependency) ---------------- */
+function createTextSprite(text, opts={}){
+  const {
+    fontPx=44, color='#e9e6dd', maxWidth=420, weight=600,
+    family="'Space Grotesk', sans-serif", worldHeight=0.045, align='center', bg=null
+  } = opts;
+  const font = `${weight} ${fontPx}px ${family}`;
+  const meas = document.createElement('canvas').getContext('2d');
+  meas.font = font;
+  const words = text.split(/\s+/);
+  const lines = [];
+  let line = '';
+  for (const w of words){
+    const test = line ? line + ' ' + w : w;
+    if (meas.measureText(test).width > maxWidth && line){ lines.push(line); line = w; }
+    else line = test;
+  }
+  if (line) lines.push(line);
+
+  const lineHeight = fontPx * 1.32;
+  const padX = 14, padY = 12;
+  let textWidth = 0;
+  lines.forEach(l => textWidth = Math.max(textWidth, meas.measureText(l).width));
+
+  const scale = 2;
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.ceil((textWidth + padX*2) * scale);
+  canvas.height = Math.ceil((lines.length*lineHeight + padY*2) * scale);
+  const ctx = canvas.getContext('2d');
+  ctx.scale(scale, scale);
+  ctx.font = font;
+  ctx.textBaseline = 'top';
+  ctx.textAlign = align;
+  if (bg){ ctx.fillStyle = bg; ctx.fillRect(0,0,canvas.width/scale, canvas.height/scale); }
+  ctx.fillStyle = color;
+  const cx = align === 'center' ? (textWidth/2 + padX) : padX;
+  lines.forEach((l,i)=> ctx.fillText(l, cx, padY + i*lineHeight));
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.minFilter = THREE.LinearFilter;
+  const mat = new THREE.SpriteMaterial({ map: texture, transparent:true, depthTest:false, depthWrite:false });
+  const sprite = new THREE.Sprite(mat);
+  const aspect = (canvas.width/scale) / (canvas.height/scale);
+  sprite.scale.set(worldHeight*aspect, worldHeight, 1);
+  sprite.renderOrder = 999;
+  return sprite;
+}
+function replaceSpriteTexture(sprite, text, opts){
+  const fresh = createTextSprite(text, opts);
+  sprite.material.map.dispose();
+  sprite.material.map = fresh.material.map;
+  sprite.material.needsUpdate = true;
+  sprite.scale.copy(fresh.scale);
+}
+
+/* ---------------- build all 7 lattices once ---------------- */
+const RESOLUTION = 42;
+const MAX_POLY = 32000; // measured worst case at RESOLUTION 42 is ~24,769 tris (Fischer-Koch); keep real margin above it
+
+const size = RESOLUTION, halfsize = RESOLUTION/2;
+const cT = new Float32Array(size), sT = new Float32Array(size);
+const c2T = new Float32Array(size), s2T = new Float32Array(size);
+for (let i=0;i<size;i++){
+  const t = ((i - halfsize) / halfsize) * Math.PI;
+  cT[i] = Math.cos(t); sT[i] = Math.sin(t);
+  c2T[i] = Math.cos(2*t); s2T[i] = Math.sin(2*t);
+}
+
+function fillField(effect, formula){
+  const field = effect.field, sz2 = effect.size2, n = effect.size;
+  for (let iz=0; iz<n; iz++){
+    const zOff = sz2*iz;
+    const cz=cT[iz], sz=sT[iz], c2z=c2T[iz], s2z=s2T[iz];
+    for (let iy=0; iy<n; iy++){
+      const yOff = zOff + n*iy;
+      const cy=cT[iy], sy=sT[iy], c2y=c2T[iy], s2y=s2T[iy];
+      for (let ix=0; ix<n; ix++){
+        const cx=cT[ix], sx=sT[ix], c2x=c2T[ix], s2x=s2T[ix];
+        field[yOff+ix] = formula(cx,sx,c2x,s2x, cy,sy,c2y,s2y, cz,sz,c2z,s2z);
+      }
+    }
+  }
+}
+function recolor(effect){
+  const n = Math.min(effect.count, effect.geometry.attributes.normal.array.length/3);
+  if (effect.count > n) console.warn('MarchingCubes: triangle budget exceeded, some geometry was dropped for', effect);
+  const normals = effect.geometry.attributes.normal.array;
+  const colors = effect.geometry.attributes.color.array;
+  for (let i=0; i<n; i++){
+    const o = i*3;
+    let nx = normals[o], ny = normals[o+1], nz = normals[o+2];
+    const len = Math.hypot(nx,ny,nz) || 1;
+    ny /= len;
+    const c = coolwarm(ny*0.5 + 0.5);
+    colors[o]=c[0]; colors[o+1]=c[1]; colors[o+2]=c[2];
+  }
+  effect.geometry.attributes.color.needsUpdate = true;
+}
+
+const items = STRUCTURES.map((s) => {
+  const group = new THREE.Group();
+  rowGroup.add(group);
+
+  const material = new THREE.MeshStandardMaterial({
+    vertexColors: true, roughness: 0.45, metalness: 0.12, side: THREE.DoubleSide,
+    emissive: 0x000000
+  });
+  const effect = new MarchingCubes(RESOLUTION, material, false, false, MAX_POLY);
+  group.add(effect);
+
+  const colorArray = new Float32Array(effect.normalArray.length);
+  effect.geometry.setAttribute('color', new THREE.BufferAttribute(colorArray, 3));
+
+  effect.reset();
+  fillField(effect, s.f);
+  effect.isolation = 0;
+  effect.update();
+  recolor(effect);
+  effect.geometry.computeBoundingSphere();
+
+  const nameSprite = createTextSprite(s.name, { fontPx: 40, worldHeight: 0.032, color:'#e9e6dd', maxWidth: 260 });
+  nameSprite.visible = false;
+  group.add(nameSprite);
+
+  return { struct: s, group, effect, material, nameSprite, userScale: 1 };
+});
+
+/* shared "detail" sprite for AR (name + application), positioned above the row */
+const detailSprite = createTextSprite(' ', { fontPx: 30, worldHeight: 0.05, maxWidth: 620, color:'#e9e6dd' });
+detailSprite.visible = false;
+rowGroup.add(detailSprite);
+
+/* ---------------- layout: desktop vs AR ---------------- */
+const DESKTOP_RADIUS = 0.5;   // half-diameter, world units
+const DESKTOP_SPACING = 1.3;
+const AR_RADIUS = 0.075;      // meters
+const AR_SPACING = 0.20;
+
+function layoutRow(spacing){
+  const n = items.length;
+  const totalWidth = (n-1)*spacing;
+  items.forEach((it,i)=>{
+    const x = -totalWidth/2 + i*spacing;
+    it.group.position.set(x, 0, 0);
+    it.group.quaternion.identity();
+  });
+}
+
+function applyDesktopLayout(){
+  layoutRow(DESKTOP_SPACING);
+  items.forEach(it=>{
+    it.effect.scale.setScalar(DESKTOP_RADIUS);
+    it.nameSprite.visible = false;
+    it.nameSprite.position.set(0, -DESKTOP_RADIUS - 0.16, 0);
+  });
+  detailSprite.visible = false;
+  rowGroup.position.set(0,0,0);
+  rowGroup.rotation.set(0,0,0);
+}
+function applyArLayout(){
+  layoutRow(AR_SPACING);
+  items.forEach(it=>{
+    it.effect.scale.setScalar(AR_RADIUS);
+    it.nameSprite.visible = true;
+    it.nameSprite.position.set(0, -AR_RADIUS - 0.035, 0);
+  });
+  detailSprite.position.set(0, AR_RADIUS + 0.09, 0);
+  // world placement is handled separately, relative to the user's actual head pose
+  // once the XR session has a real one (see placeRowInFrontOfUser)
+}
+
+/* Places the row directly in front of wherever the user is currently looking,
+   instead of at a fixed absolute coordinate — a fixed height only looks right
+   if the headset grants a true floor-calibrated reference space, which isn't
+   guaranteed, so anchoring to the live camera pose is the robust approach. */
+const AR_DISTANCE = 0.6;         // meters in front of the user
+const AR_VERTICAL_OFFSET = -0.12; // slightly below eye line, more comfortable to look at
+const _fwd = new THREE.Vector3();
+const _camPos = new THREE.Vector3();
+function placeRowInFrontOfUser(){
+  camera.getWorldPosition(_camPos);
+  camera.getWorldDirection(_fwd);
+  _fwd.y = 0; // keep the row level regardless of head pitch
+  if (_fwd.lengthSq() < 1e-6) _fwd.set(0,0,-1); else _fwd.normalize();
+
+  rowGroup.position.set(
+    _camPos.x + _fwd.x*AR_DISTANCE,
+    _camPos.y + AR_VERTICAL_OFFSET,
+    _camPos.z + _fwd.z*AR_DISTANCE
+  );
+  rowGroup.lookAt(_camPos.x, rowGroup.position.y, _camPos.z);
+}
+
+function fitDesktopCamera(){
+  const w = holder.clientWidth || window.innerWidth || 800;
+  const h = holder.clientHeight || window.innerHeight || 600;
+  const aspect = w/h;
+  camera.aspect = aspect;
+  camera.updateProjectionMatrix();
+
+  const rowWidth = (items.length-1)*DESKTOP_SPACING + DESKTOP_RADIUS*2;
+  const rowHeight = DESKTOP_RADIUS*2 + 0.5; // leave room for labels below
+  const vFov = camera.fov * Math.PI/180;
+  const marginW = 1.18, marginH = 1.35;
+  const distForWidth = (rowWidth*marginW) / (2*Math.tan(vFov/2)*aspect);
+  const distForHeight = (rowHeight*marginH) / (2*Math.tan(vFov/2));
+  const dist = Math.max(distForWidth, distForHeight, 2.2);
+
+  camera.position.set(0, 0.12, dist);
+  controls.target.set(0, -0.05, 0);
+  controls.update();
+}
+
+/* ---------------- speech ---------------- */
+let audioEnabled = true;
+const audioBtn = document.getElementById('audioBtn');
+const speechSupported = ('speechSynthesis' in window);
+
+if (!speechSupported) {
+  audioEnabled = false;
+  audioBtn.textContent = 'Audio unsupported on this browser';
+  audioBtn.style.opacity = '0.5';
+  audioBtn.style.cursor = 'default';
+} else {
+  audioBtn.addEventListener('click', ()=>{
+    audioEnabled = !audioEnabled;
+    audioBtn.innerHTML = audioEnabled ? '&#128266; Audio on' : '&#128263; Audio off';
+    if (audioEnabled) speak('Audio on.'); // says this out loud as a direct test that TTS works here
+    else window.speechSynthesis.cancel();
+  });
+}
+
+function speak(text){
+  if (!audioEnabled || !speechSupported) return;
+  const clean = text.replace(/\bTPMS\b/g, 'T P M S');
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(clean);
+  u.rate = 0.98;
+  u.pitch = 1.0;
+  window.speechSynthesis.speak(u);
+}
+
+let welcomeSpoken = false;
+function speakWelcomeOnce(){
+  if (welcomeSpoken) return;
+  welcomeSpoken = true;
+  speak('Welcome to the triply periodic minimal surface gallery. Tap a lattice to hear about it.');
+}
+document.addEventListener('pointerdown', speakWelcomeOnce, { once: true });
+renderer.xr.addEventListener('sessionstart', speakWelcomeOnce);
+
+/* ---------------- selection ---------------- */
+let selectedIndex = 0;
+const panelEls = {
+  specIndex: document.getElementById('specIndex'),
+  name: document.getElementById('name'),
+  altName: document.getElementById('altName'),
+  appText: document.getElementById('appText')
+};
+
+function selectIndex(i){
+  const changed = i !== selectedIndex;
+  selectedIndex = i;
+  const s = STRUCTURES[i];
+  panelEls.specIndex.textContent = `SPECIMEN ${String(i+1).padStart(2,'0')} / ${String(STRUCTURES.length).padStart(2,'0')}`;
+  panelEls.name.textContent = s.name;
+  panelEls.altName.textContent = s.alt;
+  panelEls.appText.textContent = s.application;
+
+  labelEls.forEach((el,idx)=> el.classList.toggle('active', idx===i));
+  items.forEach((it,idx)=>{
+    it.material.emissive.set(idx===i ? 0x2a1c10 : 0x000000);
+  });
+
+  if (renderer.xr.isPresenting){
+    replaceSpriteTexture(detailSprite, `${s.name} \u2014 ${s.application}`, { fontPx: 30, worldHeight: 0.05, maxWidth: 620, color:'#e9e6dd' });
+    detailSprite.visible = true;
+  }
+
+  if (changed) speak(`${s.speak}. ${s.application}`);
+}
+
+/* ---------------- desktop labels (DOM, projected each frame) ---------------- */
+const labelsLayer = document.getElementById('labelsLayer');
+const labelEls = STRUCTURES.map((s,i)=>{
+  const el = document.createElement('div');
+  el.className = 'latticeLabel';
+  el.textContent = s.name;
+  el.addEventListener('click', ()=> selectIndex(i));
+  labelsLayer.appendChild(el);
+  return el;
+});
+
+const _projTmp = new THREE.Vector3();
+function updateLabelPositions(){
+  const w = holder.clientWidth, h = holder.clientHeight;
+  items.forEach((it,i)=>{
+    it.group.getWorldPosition(_projTmp);
+    _projTmp.y -= DESKTOP_RADIUS + 0.16;
+    _projTmp.project(camera);
+    const el = labelEls[i];
+    if (_projTmp.z > 1 || _projTmp.z < -1){ el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    el.style.left = ((_projTmp.x*0.5+0.5)*w) + 'px';
+    el.style.top = ((1-(_projTmp.y*0.5+0.5))*h) + 'px';
+  });
+}
+
+/* ---------------- desktop: tap to select, drag away from a lattice to resize it ---------------- */
+const raycaster = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+let downX=0, downY=0;
+let desktopDrag = null; // { index, anchorX, anchorY, startDist, startUserScale }
+
+renderer.domElement.addEventListener('pointerdown', (e)=>{
+  downX = e.clientX; downY = e.clientY;
+  if (renderer.xr.isPresenting) return;
+  const rect = renderer.domElement.getBoundingClientRect();
+  ndc.x = ((e.clientX-rect.left)/rect.width)*2 - 1;
+  ndc.y = -(((e.clientY-rect.top)/rect.height)*2 - 1);
+  raycaster.setFromCamera(ndc, camera);
+  const hit = raycaster.intersectObjects(items.map(it=>it.effect), false);
+  if (!hit.length) return;
+  const idx = items.findIndex(it => it.effect === hit[0].object);
+  if (idx < 0) return;
+
+  items[idx].group.getWorldPosition(_projTmp);
+  _projTmp.project(camera);
+  const anchorX = (_projTmp.x*0.5+0.5)*rect.width + rect.left;
+  const anchorY = (1-(_projTmp.y*0.5+0.5))*rect.height + rect.top;
+  desktopDrag = {
+    index: idx, anchorX, anchorY,
+    startDist: Math.max(24, Math.hypot(e.clientX-anchorX, e.clientY-anchorY)),
+    startUserScale: items[idx].userScale
+  };
+  controls.enabled = false; // this drag resizes the lattice, not the camera
+});
+
+window.addEventListener('pointermove', (e)=>{
+  if (!desktopDrag) return;
+  const dist = Math.hypot(e.clientX-desktopDrag.anchorX, e.clientY-desktopDrag.anchorY);
+  const ratio = dist / desktopDrag.startDist;
+  items[desktopDrag.index].userScale = THREE.MathUtils.clamp(desktopDrag.startUserScale*ratio, 0.4, 2.0);
+});
+
+window.addEventListener('pointerup', ()=>{
+  if (renderer.xr.isPresenting) return;
+  if (desktopDrag) {
+    selectIndex(desktopDrag.index); // resizing (or just tapping) a lattice also selects it
+    desktopDrag = null;
+    controls.enabled = true;
+  }
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  items.forEach(it => it.userScale = 1);
+  if (renderer.xr.isPresenting) applyArLayout(); else applyDesktopLayout();
+});
+
+/* ---------------- AR: pinch-to-select ---------------- */
+let arPlaced = false;
+let presentingFrames = 0;
+
+renderer.xr.addEventListener('sessionstart', () => {
+  controls.enabled = false;
+  document.body.classList.add('ar-mode');
+  applyArLayout();
+  selectIndex(selectedIndex);
+  arPlaced = false;
+  presentingFrames = 0;
+});
+renderer.xr.addEventListener('sessionend', () => {
+  controls.enabled = true;
+  document.body.classList.remove('ar-mode');
+  applyDesktopLayout();
+  fitDesktopCamera();
+});
+
+const hand1 = renderer.xr.getHand(0);
+const hand2 = renderer.xr.getHand(1);
+scene.add(hand1);
+scene.add(hand2);
+
+function makePinchMarker(){
+  const m = new THREE.Mesh(
+    new THREE.SphereGeometry(0.008, 12, 12),
+    new THREE.MeshBasicMaterial({ color: 0xc98b4a, transparent:true, opacity:0.85 })
+  );
+  m.visible = false;
+  scene.add(m);
+  return m;
+}
+const marker1 = makePinchMarker();
+const marker2 = makePinchMarker();
+
+const PINCH_THRESHOLD = 0.028;
+const AR_SELECT_RADIUS = 0.11;
+const _tmpThumb = new THREE.Vector3();
+const _tmpIndex = new THREE.Vector3();
+const _itemWorldPos = new THREE.Vector3();
+
+function getPinchPoint(hand, out){
+  const thumb = hand.joints['thumb-tip'];
+  const index = hand.joints['index-finger-tip'];
+  if (!thumb || !index) return null;
+  thumb.getWorldPosition(_tmpThumb);
+  index.getWorldPosition(_tmpIndex);
+  if (_tmpThumb.distanceTo(_tmpIndex) > PINCH_THRESHOLD) return null;
+  out.addVectors(_tmpThumb, _tmpIndex).multiplyScalar(0.5);
+  return out;
+}
+function nearestItemWithin(point, maxDist){
+  let best = -1, bestD = Infinity;
+  items.forEach((it,i)=>{
+    it.group.getWorldPosition(_itemWorldPos);
+    const d = point.distanceTo(_itemWorldPos);
+    if (d < bestD){ bestD = d; best = i; }
+  });
+  return bestD <= maxDist ? best : -1;
+}
+
+const pinch1 = new THREE.Vector3();
+const pinch2 = new THREE.Vector3();
+const _wristQuat = new THREE.Quaternion();
+const _deltaQuat = new THREE.Quaternion();
+const _invQuat = new THREE.Quaternion();
+
+// activeManip is one of:
+//   { mode:'carry', handIndex, index, grabOffset:Vector3, startWristQuat:Quaternion, startItemQuat:Quaternion, hasWrist:boolean }
+//   { mode:'scale', index, startDist, startUserScale }
+let activeManip = null;
+
+function startCarry(hand, handIndex, point){
+  const idx = nearestItemWithin(point, AR_SELECT_RADIUS);
+  if (idx < 0) return null;
+  selectIndex(idx);
+  const it = items[idx];
+  const wrist = hand.joints['wrist'];
+  const hasWrist = !!(wrist && wrist.getWorldQuaternion);
+  const startWristQuat = new THREE.Quaternion();
+  if (hasWrist) wrist.getWorldQuaternion(startWristQuat);
+  return {
+    mode: 'carry', handIndex, index: idx,
+    grabOffset: it.group.position.clone().sub(point),
+    startWristQuat, hasWrist,
+    startItemQuat: it.group.quaternion.clone()
+  };
+}
+function updateCarry(hand, point, m){
+  const it = items[m.index];
+  it.group.position.copy(point).add(m.grabOffset);
+  if (m.hasWrist){
+    const wrist = hand.joints['wrist'];
+    wrist.getWorldQuaternion(_wristQuat);
+    _invQuat.copy(m.startWristQuat).invert();
+    _deltaQuat.multiplyQuaternions(_wristQuat, _invQuat); // how much the hand has rotated since grab
+    it.group.quaternion.multiplyQuaternions(_deltaQuat, m.startItemQuat);
+  }
+}
+function startScale(index, p1, p2){
+  return { mode:'scale', index, startDist: Math.max(0.02, p1.distanceTo(p2)), startUserScale: items[index].userScale };
+}
+function updateScale(p1, p2, m){
+  const dist = p1.distanceTo(p2);
+  items[m.index].userScale = THREE.MathUtils.clamp(m.startUserScale * (dist/m.startDist), 0.4, 2.0);
+}
+
+function updateHandInteraction(){
+  if (!renderer.xr.isPresenting) return;
+
+  const p1 = getPinchPoint(hand1, pinch1);
+  const p2 = getPinchPoint(hand2, pinch2);
+  marker1.visible = !!p1; if (p1) marker1.position.copy(p1);
+  marker2.visible = !!p2; if (p2) marker2.position.copy(p2);
+
+  if (p1 && p2){
+    // both hands pinching: two-hand scale of whichever item is in play
+    if (!activeManip || activeManip.mode !== 'scale'){
+      const idx = activeManip ? activeManip.index
+        : (nearestItemWithin(p1, AR_SELECT_RADIUS) >= 0 ? nearestItemWithin(p1, AR_SELECT_RADIUS) : nearestItemWithin(p2, AR_SELECT_RADIUS));
+      activeManip = (idx >= 0) ? (selectIndex(idx), startScale(idx, p1, p2)) : null;
+    } else {
+      updateScale(p1, p2, activeManip);
+    }
+  } else if (p1 || p2){
+    // one hand pinching: carry (move + rotate) whichever item that hand grabbed
+    const hand = p1 ? hand1 : hand2;
+    const point = p1 ? p1 : p2;
+    const handIndex = p1 ? 1 : 2;
+    if (!activeManip || activeManip.mode !== 'carry' || activeManip.handIndex !== handIndex){
+      const m = startCarry(hand, handIndex, point);
+      if (m) activeManip = m;
+    } else {
+      updateCarry(hand, point, activeManip);
+    }
+  } else {
+    activeManip = null; // both hands released
+  }
+}
+
+/* ---------------- resize ---------------- */
+function resize(){
+  const w = holder.clientWidth || window.innerWidth || 800;
+  const h = holder.clientHeight || window.innerHeight || 600;
+  renderer.setSize(w, h);
+  if (!renderer.xr.isPresenting) fitDesktopCamera();
+}
+window.addEventListener('resize', resize);
+
+/* ---------------- render loop ---------------- */
+const _scaleTarget = new THREE.Vector3();
+function animate(){
+  updateHandInteraction();
+  if (controls.enabled) controls.update();
+
+  if (renderer.xr.isPresenting){
+    presentingFrames++;
+    if (!arPlaced && presentingFrames >= 2){
+      placeRowInFrontOfUser();
+      arPlaced = true;
+    }
+  }
+
+  // combine the selection-highlight pulse with each item's manually-set resize scale
+  items.forEach((it,i)=>{
+    const highlight = (i === selectedIndex) ? 1.16 : 1.0;
+    const t = highlight * it.userScale;
+    _scaleTarget.set(t,t,t);
+    it.group.scale.lerp(_scaleTarget, 0.18);
+  });
+
+  if (!renderer.xr.isPresenting) updateLabelPositions();
+  renderer.render(scene, camera);
+}
+renderer.setAnimationLoop(animate);
+
+/* ---------------- init ---------------- */
+applyDesktopLayout();
+resize();
+selectIndex(0);
+requestAnimationFrame(resize); // re-fit once layout/fonts have definitely settled
+</script>
+</body>
+</html>
